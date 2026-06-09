@@ -377,7 +377,7 @@
 		"noCustomHeaders": "No custom headers defined. Click the + button to add one.",
 		"customParams": "Custom Request Parameters",
   		"customParamsDescription": "Additional JSON parameters merged into every OpenAI-compatible request body.",
-		"customParamsPlaceholder": "{\n  \"enable_thinking\": true,\n  \"thinking_budget\": 4096\n}",
+		"customParamsPlaceholder": "{\"enable_thinking\":true,\"thinking_budget\":4096}",
 		"requestyApiKey": "Requesty API Key",
 		"refreshModels": {
 			"label": "Refresh Models",
