@@ -264,11 +264,11 @@ export const OpenAICompatible = ({
     				value={customParamsText}
 					placeholder={t("settings:providers.customParamsPlaceholder")}
     				onInput={(e: any) => setCustomParamsText(e.target.value)}
-    				className="w-full"
+    				className="w-full">
 					<label className="block font-medium mb-1">
       					{t("settings:providers.customParams")}
     				</label>
-  				/>
+  				</VSCodeTextField>
   				<div className="text-sm text-vscode-descriptionForeground mt-1">
     				{t("settings:providers.customParamsDescription")}
  		 		</div>
