@@ -279,6 +279,16 @@ export const OpenAICompatible = ({
   				)}
 			</div>
 
+			{/* Include Reasoning Content UI */}
+			<Checkbox
+				checked={apiConfiguration?.openAiIncludeReasoningContent ?? false}
+				onChange={handleInputChange("openAiIncludeReasoningContent", noTransform)}>
+				{t("settings:providers.includeReasoningContent")}
+			</Checkbox>
+			<div className="text-sm text-vscode-descriptionForeground ml-6 mb-4">
+				{t("settings:providers.includeReasoningContentDescription")}
+			</div>
+
 			<div className="flex flex-col gap-1">
 				<Checkbox
 					checked={apiConfiguration.enableReasoningEffort ?? false}
