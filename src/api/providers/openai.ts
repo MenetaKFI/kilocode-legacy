@@ -134,6 +134,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 					}
 				}
 
+				console.dir(messages, { depth: null })
 				// kilocode_change start: Pass includeReasoningContent option
 				convertedMessages = [
 					systemMessage,
