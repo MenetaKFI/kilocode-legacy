@@ -148,7 +148,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 						}
 
 						if (Array.isArray(msg.content)) {
-							// NOTE: this is fine since env details will always be added at the end. but if it weren't there, and the user added a image_url type message, it would pop a text part before it and then move it after to the end.
+							// NOTE: this is fine since env details will always be added at the end. but if it weren't there, and the user added a image_url type message, it would pop a text part before it and then m[...]
 							let lastTextPart = msg.content.filter((part) => part.type === "text").pop()
 
 							if (!lastTextPart) {
@@ -182,6 +182,10 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 
 			// Add max_tokens if needed
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
+
+			// kilocode_change start: Add custom request body parameters
+			this.addCustomParams(requestOptions)
+			// kilocode_change end
 
 			let stream
 			try {
@@ -260,6 +264,10 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 
 			// Add max_tokens if needed
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
+
+			// kilocode_change start: Add custom request body parameters
+			this.addCustomParams(requestOptions)
+			// kilocode_change end
 
 			let response
 			try {
@@ -343,6 +351,10 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			// Add max_tokens if needed
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
 
+			// kilocode_change start: Add custom request body parameters
+			this.addCustomParams(requestOptions)
+			// kilocode_change end
+
 			let response
 			try {
 				response = await this.client.chat.completions.create(
@@ -401,6 +413,10 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			// This allows O3 models to limit response length when includeMaxTokens is enabled
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
 
+			// kilocode_change start: Add custom request body parameters
+			this.addCustomParams(requestOptions)
+			// kilocode_change end
+
 			let stream
 			try {
 				stream = await this.client.chat.completions.create(
@@ -436,6 +452,10 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			// but they do support max_completion_tokens (the modern OpenAI parameter)
 			// This allows O3 models to limit response length when includeMaxTokens is enabled
 			this.addMaxTokensIfNeeded(requestOptions, modelInfo)
+
+			// kilocode_change start: Add custom request body parameters
+			this.addCustomParams(requestOptions)
+			// kilocode_change end
 
 			let response
 			try {
@@ -583,6 +603,24 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			requestOptions.max_completion_tokens = this.options.modelMaxTokens || modelInfo.maxTokens
 		}
 	}
+
+	/**
+	 * kilocode_change start: Add custom request body parameters
+	 * Merges custom request body parameters from openAiCustomParams into the request options.
+	 * This allows providers to send custom parameters like kwargs, enable_thinking, etc.
+	 * @param requestOptions - The request options object to merge custom parameters into
+	 */
+	protected addCustomParams(
+		requestOptions:
+			| OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming
+			| OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
+			| OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
+	): void {
+		if (this.options.openAiCustomParams && typeof this.options.openAiCustomParams === "object") {
+			Object.assign(requestOptions, this.options.openAiCustomParams)
+		}
+	}
+	// kilocode_change end
 }
 
 export async function getOpenAiModels(baseUrl?: string, apiKey?: string, openAiHeaders?: Record<string, string>) {
