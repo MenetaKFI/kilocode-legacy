@@ -1,5 +1,6 @@
 import { Anthropic } from "@anthropic-ai/sdk"
 import OpenAI from "openai"
+import { THINK_START, THINK_END } from "./constants"
 
 /**
  * Type for OpenRouter's reasoning detail elements.
@@ -271,6 +272,14 @@ export interface ConvertToOpenAiMessagesOptions {
 	 * reasoning_content. Default is false for backward compatibility.
 	 */
 	mergeToolResultText?: boolean
+	// kilocode_change start
+	/**
+	 * If true, back-inject reasoning/thinking content from assistant messages
+	 * into the reasoning_content field (stripped of thinking tags).
+	 * This is useful for providers that require reasoning_content for context continuity.
+	 */
+	includeReasoningContent?: boolean
+	// kilocode_change end
 }
 
 // kilocode_change start
@@ -287,6 +296,21 @@ type ReasoningBlockParam = {
 
 function isReasoningBlockParam(part: unknown): part is ReasoningBlockParam {
 	return typeof part === "object" && part !== null && (part as { type?: unknown }).type === "reasoning"
+}
+
+/**
+ * Extracts the content inside a THINK_START/THINK_END block.
+ * Returns undefined if no thinking block is present.
+ */
+function extractThinkingContent(text: string): string | undefined {
+	const escapedStart = THINK_START.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+	const escapedEnd = THINK_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+	const regex = new RegExp(
+		`${escapedStart}([\\s\\S]*?)${escapedEnd}`,
+		"i",
+	)
+	const match = text.match(regex)
+	return match?.[1]?.trim()
 }
 
 export function convertToOpenAiMessages(
@@ -323,11 +347,24 @@ export function convertToOpenAiMessages(
 			// If a message also contains reasoning_details (Gemini 3 / xAI / o-series, etc.),
 			// we must preserve it here as well.
 			const messageWithDetails = anthropicMessage as any
-			const baseMessage: OpenAI.Chat.ChatCompletionMessageParam & { reasoning_details?: any[] } = {
+			const baseMessage: OpenAI.Chat.ChatCompletionMessageParam & {
+				reasoning_details?: any[]
+				reasoning_content?: string // kilocode_change
+			} = {
 				role: anthropicMessage.role,
 				content: anthropicMessage.content,
 			}
 
+			// kilocode_change start: Back-inject reasoning content from thinking tags if option is enabled
+			if (anthropicMessage.role === "assistant" && options?.includeReasoningContent) {
+				const text = anthropicMessage.content || ""
+				const reasoningContent = extractThinkingContent(text)
+				if (reasoningContent) {
+					baseMessage.reasoning_content = reasoningContent
+				}
+			}
+			// kilocode_change end
+			
 			if (anthropicMessage.role === "assistant") {
 				const mapped = mapReasoningDetails(messageWithDetails.reasoning_details)
 				if (mapped) {
@@ -483,23 +520,41 @@ export function convertToOpenAiMessages(
 					{ nonToolMessages: [], toolMessages: [] },
 				)
 
-				// Process non-tool messages
+				// kilocode_change start: Collect reasoning content separately for back-injection
+				let reasoningContent: string | undefined
 				let content: string | undefined
 				if (nonToolMessages.length > 0) {
+					// First pass: collect reasoning content if needed
+					if (options?.includeReasoningContent) {
+						const reasoningParts: string[] = []
+						for (const part of nonToolMessages) {
+							if (part.type === "thinking") {
+								reasoningParts.push(part.thinking)
+							} else if (part.type === "reasoning") {
+								reasoningParts.push(part.text || part.thinking || "")
+							}
+						}
+						if (reasoningParts.length > 0) {
+							reasoningContent = reasoningParts.join("\n")
+						}
+					}
+
+					// Second pass: build content string with thinking tags
 					content = nonToolMessages
 						.map((part) => {
 							if (part.type === "image") {
 								return "" // impossible as the assistant cannot send images
 							} else if (part.type === "thinking") {
-								return "<think>" + part.thinking + "</think>"
+								return THINK_START + part.thinking + THINK_END
 							} else if (part.type === "reasoning") {
 								// kilocode_change - support custom "reasoning" type used by some providers
-								return "<think>" + (part.text || part.thinking || "") + "</think>"
+								return THINK_START + (part.text || part.thinking || "") + THINK_END
 							}
 							return part.text
 						})
 						.join("\n")
 				}
+				// kilocode_change end
 
 				// Process tool use messages
 				// kilocode_change start: Use type assertion to access extra_content which may be added for Gemini 3 support
@@ -534,6 +589,7 @@ export function convertToOpenAiMessages(
 				// when sending messages back to some APIs.
 				const baseMessage: OpenAI.Chat.ChatCompletionAssistantMessageParam & {
 					reasoning_details?: any[]
+					reasoning_content?: string // kilocode_change
 				} = {
 					role: "assistant",
 					// Use empty string instead of undefined for providers like Gemini (via OpenRouter)
@@ -548,6 +604,12 @@ export function convertToOpenAiMessages(
 					baseMessage.reasoning_details = mapped
 				}
 
+				// kilocode_change start: Add reasoning_content if option is enabled
+				if (options?.includeReasoningContent && reasoningContent) {
+					baseMessage.reasoning_content = reasoningContent
+				}
+				// kilocode_change end
+				
 				// Add tool_calls after reasoning_details
 				// Cannot be an empty array. API expects an array with minimum length 1, and will respond with an error if it's empty
 				if (tool_calls.length > 0) {
