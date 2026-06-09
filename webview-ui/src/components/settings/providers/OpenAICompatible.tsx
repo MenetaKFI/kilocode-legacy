@@ -95,7 +95,7 @@ export const OpenAICompatible = ({
 	}, [customHeaders, setApiConfigurationField])
 
 	const [customParamsText, setCustomParamsText] = useState(() =>
-  		JSON.stringify(apiConfiguration?.openAiCustomParams ?? {}, null, 2),
+  		JSON.stringify(apiConfiguration?.openAiCustomParams ?? {}),
 	)
 
 	useEffect(() => {
@@ -260,16 +260,14 @@ export const OpenAICompatible = ({
 
 			{/* Custom Request Parameters UI */}
 			<div className="mb-4">
-  				<label className="block font-medium mb-2">
-    				{t("settings:providers.customParams")}
-  				</label>
-  				<VSCodeTextArea
-    				multiline
-    				rows={8}
+  				<VSCodeTextField
     				value={customParamsText}
 					placeholder={t("settings:providers.customParamsPlaceholder")}
     				onInput={(e: any) => setCustomParamsText(e.target.value)}
     				className="w-full"
+					<label className="block font-medium mb-1">
+      					{t("settings:providers.customParams")}
+    				</label>
   				/>
   				<div className="text-sm text-vscode-descriptionForeground mt-1">
     				{t("settings:providers.customParamsDescription")}
