@@ -117,6 +117,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		if (this.options.openAiStreamingEnabled ?? true) {
 			let convertedMessages
 
+			console.dir(messages, { depth: null })
 			if (deepseekReasoner) {
 				convertedMessages = convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
 			} else {
@@ -134,7 +135,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 					}
 				}
 
-				console.dir(messages, { depth: null })
 				// kilocode_change start: Pass includeReasoningContent option
 				convertedMessages = [
 					systemMessage,
