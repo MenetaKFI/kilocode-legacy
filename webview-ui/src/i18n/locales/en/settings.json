@@ -378,6 +378,8 @@
 		"customParams": "Custom Request Parameters",
   		"customParamsDescription": "Additional JSON parameters merged into every OpenAI-compatible request body.",
 		"customParamsPlaceholder": "{\"enable_thinking\":true,\"thinking_budget\":4096}",
+		"includeReasoningContent": "Include reasoning content in messages",
+		"includeReasoningContentDescription": "When enabled, reasoning/thinking content from model responses will be back-injected into assistant messages as 'reasoning_content' field (stripped of thinking tags). Some providers require this for context continuity.",
 		"requestyApiKey": "Requesty API Key",
 		"refreshModels": {
 			"label": "Refresh Models",
