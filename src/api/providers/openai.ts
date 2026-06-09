@@ -134,7 +134,14 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 					}
 				}
 
-				convertedMessages = [systemMessage, ...convertToOpenAiMessages(messages)]
+				// kilocode_change start: Pass includeReasoningContent option
+				convertedMessages = [
+					systemMessage,
+					...convertToOpenAiMessages(messages, {
+						includeReasoningContent: this.options.openAiIncludeReasoningContent,
+					}),
+				]
+				// kilocode_change end
 
 				if (modelInfo.supportsPromptCache) {
 					// Note: the following logic is copied from openrouter:
@@ -253,7 +260,12 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 				model: modelId,
 				messages: deepseekReasoner
 					? convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
-					: [systemMessage, ...convertToOpenAiMessages(messages)],
+					: [
+							systemMessage,
+							...convertToOpenAiMessages(messages, {
+								includeReasoningContent: this.options.openAiIncludeReasoningContent,
+							}),
+						],
 				...(metadata?.tools && { tools: this.convertToolsForOpenAI(metadata.tools) }),
 				...(metadata?.tool_choice && { tool_choice: metadata.tool_choice }),
 				...(metadata?.toolProtocol === "native" &&
@@ -394,7 +406,9 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 						role: "developer",
 						content: `Formatting re-enabled\n${systemPrompt}`,
 					},
-					...convertToOpenAiMessages(messages),
+					...convertToOpenAiMessages(messages, {
+						includeReasoningContent: this.options.openAiIncludeReasoningContent,
+					}),
 				],
 				stream: true,
 				...(isGrokXAI ? {} : { stream_options: { include_usage: true } }),
@@ -436,7 +450,9 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 						role: "developer",
 						content: `Formatting re-enabled\n${systemPrompt}`,
 					},
-					...convertToOpenAiMessages(messages),
+					...convertToOpenAiMessages(messages, {
+						includeReasoningContent: this.options.openAiIncludeReasoningContent,
+					}),
 				],
 				reasoning_effort: modelInfo.reasoningEffort as "low" | "medium" | "high" | undefined,
 				temperature: undefined,
@@ -613,7 +629,6 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 	protected addCustomParams(
 		requestOptions:
 			| OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming
-			| OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
 			| OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming,
 	): void {
 		if (this.options.openAiCustomParams && typeof this.options.openAiCustomParams === "object") {
