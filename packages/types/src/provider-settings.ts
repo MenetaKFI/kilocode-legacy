@@ -339,6 +339,7 @@ const openAiSchema = baseProviderSettingsSchema.extend({
 	openAiHostHeader: z.string().optional(), // Keep temporarily for backward compatibility during migration.
 	openAiHeaders: z.record(z.string(), z.string()).optional(),
 	openAiCustomParams: z.record(z.any()).optional(),
+	openAiIncludeReasoningContent: z.boolean().optional(),
 })
 
 // kilocode_change start
@@ -355,6 +356,7 @@ const openAiResponsesSchema = baseProviderSettingsSchema.extend({
 	openAiHostHeader: z.string().optional(), // Keep temporarily for backward compatibility during migration.
 	openAiHeaders: z.record(z.string(), z.string()).optional(),
 	openAiCustomParams: z.record(z.any()).optional(),
+	openAiIncludeReasoningContent: z.boolean().optional(),
 })
 // kilocode_change end
 
