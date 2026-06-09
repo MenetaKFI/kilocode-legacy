@@ -94,6 +94,30 @@ export const OpenAICompatible = ({
 		return () => clearTimeout(timer)
 	}, [customHeaders, setApiConfigurationField])
 
+	const [customParamsText, setCustomParamsText] = useState(() =>
+  		JSON.stringify(apiConfiguration?.openAiCustomParams ?? {}, null, 2),
+	)
+
+	useEffect(() => {
+  		const timer = setTimeout(() => {
+    		try {
+      			const parsed = customParamsText.trim()
+        			? JSON.parse(customParamsText)
+        			: {}
+      			if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        			throw new Error("Must be a JSON object")
+      			}
+      			setCustomParamsError(undefined)
+      			setApiConfigurationField("openAiCustomParams", parsed)
+    		} catch (err) {
+      			setCustomParamsError("Invalid JSON object")
+    		}
+  		}, 300)
+		return () => clearTimeout(timer)
+	}, [customParamsText, setApiConfigurationField])
+
+	const [customParamsError, setCustomParamsError] = useState<string>()
+
 	const handleInputChange = useCallback(
 		<K extends keyof ProviderSettings, E>(
 			field: K,
@@ -232,6 +256,29 @@ export const OpenAICompatible = ({
 						</div>
 					))
 				)}
+			</div>
+
+			{/* Custom Request Parameters UI */}
+			<div className="mb-4">
+  				<label className="block font-medium mb-2">
+    				{t("settings:providers.customParams")}
+  				</label>
+  				<VSCodeTextField
+    				multiline
+    				rows={8}
+    				value={customParamsText}
+					placeholder={t("settings:providers.customParamsPlaceholder")}
+    				onInput={(e: any) => setCustomParamsText(e.target.value)}
+    				className="w-full"
+  				/>
+  				<div className="text-sm text-vscode-descriptionForeground mt-1">
+    				{t("settings:providers.customParamsDescription")}
+ 		 		</div>
+				{customParamsError && (
+    				<div className="text-sm text-vscode-errorForeground mt-1">
+      					{customParamsError}
+    				</div>
+  				)}
 			</div>
 
 			<div className="flex flex-col gap-1">
