@@ -263,7 +263,7 @@ export const OpenAICompatible = ({
   				<label className="block font-medium mb-2">
     				{t("settings:providers.customParams")}
   				</label>
-  				<VSCodeTextField
+  				<VSCodeTextArea
     				multiline
     				rows={8}
     				value={customParamsText}
