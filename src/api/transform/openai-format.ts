@@ -620,6 +620,8 @@ export function convertToOpenAiMessages(
 				// kilocode_change start: Add reasoning_content if option is enabled
 				if (options?.includeReasoningContent && reasoningContent) {
 					baseMessage.reasoning_content = reasoningContent
+					// IMPORTANT: strip reasoning from final content
+					baseMessage.content = stripThinkingContent(baseMessage.content)
 				}
 				// kilocode_change end
 				
