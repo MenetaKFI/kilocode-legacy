@@ -118,6 +118,7 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 			let convertedMessages
 
 			console.dir(messages, { depth: null })
+			console.dir(this.options.openAiIncludeReasoningContent)
 			if (deepseekReasoner) {
 				convertedMessages = convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
 			} else {
@@ -345,6 +346,8 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		const info: ModelInfo = {
 			...NATIVE_TOOL_DEFAULTS,
 			...(this.options.openAiCustomModelInfo ?? openAiModelInfoSaneDefaults),
+			// derived capability flag
+			preserveReasoning: !!this.options.openAiIncludeReasoningContent,
 		}
 		const params = getModelParams({ format: "openai", modelId: id, model: info, settings: this.options })
 		return { id, info, ...params }
