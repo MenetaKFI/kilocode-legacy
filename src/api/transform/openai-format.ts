@@ -313,6 +313,17 @@ function extractThinkingContent(text: string): string | undefined {
 	return match?.[1]?.trim()
 }
 
+/**
+ * Removes the content inside a THINK_START/THINK_END block.
+ * Returns only the non-thinking part of content.
+ */
+function stripThinkingContent(text: string): string {
+	const escapedStart = THINK_START.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+	const escapedEnd = THINK_END.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+	const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, "gi")
+	return text.replace(regex, "").trim()
+}
+
 export function convertToOpenAiMessages(
 	anthropicMessages: Anthropic.Messages.MessageParam[],
 	options?: ConvertToOpenAiMessagesOptions,
@@ -362,6 +373,8 @@ export function convertToOpenAiMessages(
 				if (reasoningContent) {
 					baseMessage.reasoning_content = reasoningContent
 				}
+				// IMPORTANT: strip reasoning from final content
+				baseMessage.content = stripThinkingContent(text)
 			}
 			// kilocode_change end
 			
