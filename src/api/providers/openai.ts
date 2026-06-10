@@ -117,8 +117,8 @@ export class OpenAiHandler extends BaseProvider implements SingleCompletionHandl
 		if (this.options.openAiStreamingEnabled ?? true) {
 			let convertedMessages
 
-			console.dir(messages, { depth: null })
-			console.dir(this.options.openAiIncludeReasoningContent)
+			//console.dir(messages, { depth: null })
+			//console.dir(this.options.openAiIncludeReasoningContent)
 			if (deepseekReasoner) {
 				convertedMessages = convertToR1Format([{ role: "user", content: systemPrompt }, ...messages])
 			} else {
