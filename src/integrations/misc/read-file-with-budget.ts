@@ -1,3 +1,9 @@
+/* kilocode_change start
+Fix race between readline close and stream destroy which can throw "readline was closed" on Node 24.
+We avoid destroying the underlying stream before the readline interface emits 'close'.
+Also guard pause/resume calls with rl.closed to prevent operations on closed interface.
+kilocode_change end */
+
 import { createReadStream } from "fs"
 import fs from "fs/promises"
 import { createInterface } from "readline"
@@ -124,28 +130,31 @@ export async function readFileWithTokenBudget(
 		}
 
 		rl.on("line", (line) => {
+			// Guard against operating on a closed interface
+			if (shouldClose || (rl as any).closed) return
+
 			lineBuffer.push(line)
 
 			if (lineBuffer.length >= chunkLines && !isProcessing) {
 				isProcessing = true
-				rl.pause()
+				// Only pause if interface still open
+				if (!(rl as any).closed) rl.pause()
 
 				processBuffer()
 					.then((continueReading) => {
 						isProcessing = false
 						if (!continueReading) {
 							shouldClose = true
-							rl.close()
-							readStream.destroy()
-						} else if (!shouldClose) {
+							// Close the readline interface first; do not destroy the stream here to avoid races
+							if (!(rl as any).closed) rl.close()
+						} else if (!shouldClose && !(rl as any).closed) {
 							rl.resume()
 						}
 					})
 					.catch((err) => {
 						isProcessing = false
 						shouldClose = true
-						rl.close()
-						readStream.destroy()
+						if (!(rl as any).closed) rl.close()
 						reject(err)
 					})
 			}
@@ -171,6 +180,13 @@ export async function readFileWithTokenBudget(
 					reject(err)
 					return
 				}
+			}
+
+			// If we previously requested close, destroy the underlying stream now
+			if (shouldClose) {
+				try {
+					readStream.destroy()
+				} catch {}
 			}
 
 			resolve({ content, tokenCount, lineCount, complete })
