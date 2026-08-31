@@ -2,34 +2,6 @@ import { io, type Socket, type SocketOptions, type ManagerOptions } from "socket
 
 import { ConnectionState, type RetryConfig } from "@roo-code/types"
 
-// kilocode_change start - opt-in socket agent support for CA or insecure TLS
-import fs from "fs"
-import path from "path"
-import https from "https"
-
-function createAgentFromEnv(): https.Agent | undefined {
-	try {
-		const caPath = process.env.KILO_CA_CERT_PATH
-		if (caPath) {
-			const resolved = path.resolve(caPath)
-			if (fs.existsSync(resolved)) {
-				const ca = fs.readFileSync(resolved)
-				console.warn(`[SocketTransport] KILO_CA_CERT_PATH=${resolved} - using provided CA for socket transport`)
-				return new https.Agent({ ca })
-			}
-			console.warn(`[SocketTransport] KILO_CA_CERT_PATH is set but file not found: ${resolved}`)
-		}
-		if (process.env.KILO_ALLOW_INSECURE_TLS === "1") {
-			console.warn("[SocketTransport] KILO_ALLOW_INSECURE_TLS=1 - creating insecure agent (rejectUnauthorized=false)")
-			return new https.Agent({ rejectUnauthorized: false })
-		}
-	} catch (e) {
-		console.warn("[SocketTransport] createAgentFromEnv error:", e)
-	}
-	return undefined
-}
-// kilocode_change end
-
 export interface SocketTransportOptions {
 	url: string
 	socketOptions: Partial<ManagerOptions & SocketOptions>
@@ -129,25 +101,7 @@ export class SocketTransport {
 
 	private async _connect(): Promise<void> {
 		return new Promise((resolve, reject) => {
-			// kilocode_change start - merge in agent into socket options for websocket + polling
-			const envAgent = createAgentFromEnv()
-			const socketOptionsWithAgent = {
-				...this.options.socketOptions,
-				transportOptions: {
-					...((this.options.socketOptions as any)?.transportOptions || {}),
-					websocket: {
-						...((this.options.socketOptions as any)?.transportOptions?.websocket || {}),
-						...(envAgent ? { agent: envAgent } : {}),
-					},
-					polling: {
-						...((this.options.socketOptions as any)?.transportOptions?.polling || {}),
-						...(envAgent ? { agent: envAgent } : {}),
-					},
-				},
-			}
-
-			this.socket = io(this.options.url, socketOptionsWithAgent)
-			// kilocode_change end
+			this.socket = io(this.options.url, this.options.socketOptions)
 
 			let connectionTimeout: NodeJS.Timeout | null = setTimeout(() => {
 				console.error(`[SocketTransport#_connect] failed to connect after ${this.CONNECTION_TIMEOUT}ms`)
