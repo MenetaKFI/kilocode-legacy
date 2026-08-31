@@ -11,6 +11,19 @@ interface CloudAPIRequestOptions extends Omit<RequestInit, "headers"> {
 	headers?: Record<string, string>
 }
 
+// kilocode_change start - opt-in global insecure TLS for local dev only
+if (typeof process !== "undefined" && process.env.KILO_ALLOW_INSECURE_TLS === "1") {
+	try {
+		// This disables Node's strict TLS validation for this process; INSECURE.
+		// Use only for local testing with self-signed or broken certs.
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+		console.warn("[CloudAPI] KILO_ALLOW_INSECURE_TLS=1 - NODE_TLS_REJECT_UNAUTHORIZED set to 0 (INSECURE)")
+	} catch (e) {
+		console.warn("[CloudAPI] Failed to set NODE_TLS_REJECT_UNAUTHORIZED:", e)
+	}
+}
+// kilocode_change end
+
 export class CloudAPI {
 	private authService: AuthService
 	private log: (...args: unknown[]) => void
